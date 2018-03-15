@@ -15,11 +15,17 @@ def all():
 def by_decade(decade):
     try:
         decade = int(decade[:4]) // 10 * 10
-        return get_albums({'$and': [{'year': {'$gte': decade}}, {'year': {'$lt': decade + 10}}]})
+        return get_albums(filters = {'$and': [{'year': {'$gte': decade}}, {'year': {'$lt': decade + 10}}]})
     except:
         return get_albums()
 
-def get_albums(filters = {}):
+@app.route('/count')
+def count():
+    return get_albums(True)
+
+def get_albums(count = False, filters = {}):
+    if count:
+        return jsonify(albums.count(filters))
     return jsonify(list(albums.find(filters, {'_id': False})))
 
 @app.route('/insert', methods = ['POST'])
