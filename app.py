@@ -5,12 +5,13 @@ app = Flask(__name__)
 app.url_map.strict_slashes = False
 
 albums = MongoClient().album_ratings.albums
+insert_keys = ['artist', 'rating', 'score', 'score_max', 'title', 'year']
 
-@app.route('/', methods = ['GET'])
+@app.route('/')
 def all():
     return get_albums()
 
-@app.route('/decade/<decade>', methods = ['GET'])
+@app.route('/decade/<decade>')
 def by_decade(decade):
     try:
         decade = int(decade[:4]) // 10 * 10
@@ -20,3 +21,13 @@ def by_decade(decade):
 
 def get_albums(filters = {}):
     return jsonify(list(albums.find(filters, {'_id': False})))
+
+@app.route('/insert', methods = ['POST'])
+def insert():
+    try:
+        json = request.get_json()
+        json['rating'] = json['score'] / json['score_max']
+        albums.insert({key: json[key] for key in insert_keys})
+    except:
+        pass
+    return ''
