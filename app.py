@@ -31,6 +31,10 @@ def count():
     return get_albums(True)
 
 def get_albums(count = False, filters = {}):
+    try:
+        filters['year'] = int(request.args['year'])
+    except:
+        pass
     if count:
         return jsonify(albums.count(filters))
     return jsonify(list(albums.find(filters, {'_id': False})))
