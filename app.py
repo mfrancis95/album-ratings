@@ -5,7 +5,14 @@ app = Flask(__name__)
 app.url_map.strict_slashes = False
 
 albums = MongoClient().album_ratings.albums
-insert_keys = ['artist', 'rating', 'score', 'score_max', 'title', 'year']
+keys = ['artist', 'rating', 'score', 'score_max', 'title', 'year']
+key_types = {
+    'artist': str,
+    'score': int,
+    'score_max': int,
+    'title': str,
+    'year': int
+}
 
 @app.route('/')
 def all():
@@ -31,9 +38,11 @@ def get_albums(count = False, filters = {}):
 @app.route('/insert', methods = ['POST'])
 def insert():
     try:
-        json = request.get_json()
-        json['rating'] = json['score'] / json['score_max']
-        albums.insert({key: json[key] for key in insert_keys})
+        album = request.form.to_dict() or request.get_json(True)
+        for key, func in key_types.items():
+            album[key] = func(album[key])
+        album['rating'] = album['score'] / album['score_max']
+        albums.insert({key: album[key] for key in keys})
     except:
         pass
     return ''
