@@ -5,7 +5,7 @@ app = Flask(__name__)
 app.url_map.strict_slashes = False
 
 albums = MongoClient().album_ratings.albums
-keys = ['artist', 'rating', 'score', 'score_max', 'title', 'year']
+keys = ['artist', 'own', 'rating', 'score', 'score_max', 'title', 'year']
 key_types = {
     'artist': str,
     'score': int,
@@ -17,6 +17,9 @@ key_types = {
 @app.route('/')
 def all():
     return get_albums()
+
+def boolean(value):
+    return value != 'false' if value is not None else False
 
 @app.route('/decade/<decade>')
 def by_decade(decade):
@@ -45,6 +48,7 @@ def insert():
         album = request.form.to_dict() or request.get_json(True)
         for key, func in key_types.items():
             album[key] = func(album[key])
+        album['own'] = boolean(album.get('own'))
         album['rating'] = album['score'] / album['score_max']
         albums.insert({key: album[key] for key in keys})
     except:
