@@ -1,56 +1,26 @@
-from flask import Flask, jsonify, request
-from pymongo import MongoClient
+from flask import Flask, jsonify
+from .database import get_albums, get_albums_by_decade, get_count, insert_album
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 
-albums = MongoClient().album_ratings.albums
-keys = ['artist', 'own', 'rating', 'score', 'score_max', 'title', 'year']
-key_types = {
-    'artist': str,
-    'score': int,
-    'score_max': int,
-    'title': str,
-    'year': int
-}
-
 @app.route('/')
 def all():
-    return get_albums()
-
-def boolean(value):
-    return value != 'false' if value is not None else False
+    return jsonify(get_albums())
 
 @app.route('/decade/<decade>')
 def by_decade(decade):
     try:
         decade = int(decade[:4]) // 10 * 10
-        return get_albums(filters = {'$and': [{'year': {'$gte': decade}}, {'year': {'$lt': decade + 10}}]})
+        return jsonify(get_albums_by_decade(decade))
     except:
-        return get_albums()
+        return jsonify(get_albums())
 
 @app.route('/count')
 def count():
-    return get_albums(True)
-
-def get_albums(count = False, filters = {}):
-    try:
-        filters['year'] = int(request.args['year'])
-    except:
-        pass
-    if count:
-        return jsonify(albums.count(filters))
-    return jsonify(list(albums.find(filters, {'_id': False})))
+    return get_count()
 
 @app.route('/insert', methods = ['POST'])
 def insert():
-    try:
-        album = request.form.to_dict() or request.get_json(True)
-        for key, func in key_types.items():
-            album[key] = func(album[key])
-        album['own'] = boolean(album.get('own'))
-        album['rating'] = album['score'] / album['score_max']
-        albums.insert({key: album[key] for key in keys})
-    except:
-        pass
+    insert_album()
     return ''
